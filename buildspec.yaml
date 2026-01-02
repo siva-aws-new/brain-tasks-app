@@ -19,19 +19,19 @@ phases:
       - docker tag brain-tasks-app:latest $ECR_REPO:latest
 
   post_build:
-  commands:
-    - echo Pushing Docker image...
-    - docker push $ECR_REPO:latest
+    commands:
+      - echo Pushing Docker image...
+      - docker push $ECR_REPO:latest
 
-    - echo Installing kubectl...
-    - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-    - chmod +x kubectl
-    - mv kubectl /usr/local/bin/kubectl
-    - kubectl version --client
+      - echo Installing kubectl...
+      - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - chmod +x kubectl
+      - mv kubectl /usr/local/bin/kubectl
+      - kubectl version --client
 
-    - echo Updating kubeconfig...
-    - aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+      - echo Updating kubeconfig...
+      - aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
 
-    - echo Deploying to EKS...
-    - kubectl apply -f k8s/deployment.yaml
-    - kubectl apply -f k8s/service.yaml
+      - echo Deploying to EKS...
+      - kubectl apply -f k8s/deployment.yaml
+      - kubectl apply -f k8s/service.yaml
