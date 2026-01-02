@@ -4,28 +4,33 @@ env:
   variables:
     AWS_REGION: ap-south-1
     ECR_REPO: 513410254886.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app
+    CLUSTER_NAME: brain-eks
 
 phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
-      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
 
   build:
     commands:
-      - echo Build started on `date`
-      - docker build -t brain-tasks-app:$IMAGE_TAG .
-      - docker tag brain-tasks-app:$IMAGE_TAG $ECR_REPO:$IMAGE_TAG
-      - docker tag brain-tasks-app:$IMAGE_TAG $ECR_REPO:latest
+      - echo Building Docker image...
+      - docker build -t brain-tasks-app .
+      - docker tag brain-tasks-app:latest $ECR_REPO:latest
 
   post_build:
     commands:
-      - echo Pushing Docker images...
-      - docker push $ECR_REPO:$IMAGE_TAG
+      - echo Pushing Docker image...
       - docker push $ECR_REPO:latest
-      - echo Build completed on `date`
 
-artifacts:
-  files:
-    - '**/*'
+      - echo Installing kubectl...
+      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.29.0/2023-11-14/bin/linux/amd64/kubectl
+      - chmod +x kubectl
+      - mv kubectl /usr/local/bin/
+
+      - echo Updating kubeconfig...
+      - aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+
+      - echo Deploying to EKS...
+      - kubectl apply -f k8s/deployment.yaml
+      - kubectl apply -f k8s/service.yaml
